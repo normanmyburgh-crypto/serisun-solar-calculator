@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SERISUN Solar Savings Calculator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #FFFFFF;
+    margin: 0;
+    padding: 20px;
+  }
+  h2 {
+    text-align: center;
+    color: #006A4F;
+    margin-bottom: 15px;
+  }
+  #controls {
+    max-width: 500px;
+    margin: 0 auto 30px auto;
+    text-align: center;
+  }
+  #controls label {
+    font-size: 16px;
+    color: #14452F;
+    margin-right: 10px;
+  }
+  #controls input {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #687169;
+    border-radius: 4px;
+    width: 150px;
+    text-align: right;
+  }
+  #chart-container {
+    max-width: 900px;
+    margin: auto;
+  }
+</style>
+</head>
+<body>
+
+<h2>Solar Production vs Your Usage</h2>
+
+<div id="controls">
+  <label for="billInput">Average Monthly Bill (R):</label>
+  <input type="number" id="billInput" value="2000" step="50" min="0">
+</div>
+
+<div id="chart-container">
+  <canvas id="solarChart"></canvas>
+</div>
+
+<script>
+const ctx = document.getElementById('solarChart').getContext('2d');
+
+// Base usage (kWh) per month before scaling by bill
+let baseUsage = [750, 720, 680, 700, 720, 760, 800, 790, 770, 750, 740, 730];
+const monthlyProduction = [820, 840, 860, 880, 900, 920, 940, 930, 910, 880, 850, 830]; // kWh
+
+// Assume average Eskom price (adjustable) R2.50/kWh
+const pricePerKWh = 2.5;
+
+let chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        datasets: [
+            {
+                label: 'Solar Production (kWh)',
+                data: monthlyProduction,
+                borderColor: '#006A4F',
+                backgroundColor: 'rgba(0,106,79,0.2)',
+                tension: 0.3,
+                fill: true
+            },
+            {
+                label: 'Your Usage (kWh)',
+                data: [...baseUsage],
+                borderColor: '#14452F',
+                backgroundColor: 'rgba(20,69,47,0.2)',
+                tension: 0.3,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { mode: 'index', intersect: false }
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// Update graph when bill changes
+document.getElementById('billInput').addEventListener('input', function() {
+    let monthlyBill = parseFloat(this.value) || 0;
+    let monthlyUsageKWh = monthlyBill / pricePerKWh;
+    let scalingFactor = monthlyUsageKWh / (baseUsage.reduce((a, b) => a + b) / baseUsage.length);
+
+    let newUsage = baseUsage.map(u => (u * scalingFactor).toFixed(0));
+
+    chart.data.datasets[1].data = newUsage;
+    chart.update();
+});
+</script>
+
+</body>
+</html>
